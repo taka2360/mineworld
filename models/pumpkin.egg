@@ -1,0 +1,98 @@
+<CoordinateSystem> { Z-Up }
+
+<Texture> one {
+  "../textures/7-7.png"
+}
+
+<Texture> two {
+  "../textures/7-6.png"
+}
+
+<Texture> five {
+  "../textures/6-6.png"
+}
+
+<VertexPool> box {
+  <Vertex> 1 {
+    0 1 1
+    <UV> { 1 1 }
+  }
+  <Vertex> 2 {
+    1 1 1
+    <UV> { 0 1 }
+  }
+  <Vertex> 3 {
+    0 0 1
+    <UV> { 0 1 }
+  }
+  <Vertex> 4 {
+    1 0 1
+    <UV> { 1 1 }
+  }
+  <Vertex> 5 {
+    0 1 0
+    <UV> { 1 0 }
+  }
+  <Vertex> 6 {
+    1 1 0
+    <UV> { 0 0 }
+  }
+  <Vertex> 7 {
+    0 0 0
+    <UV> { 0 0 }
+  }
+  <Vertex> 8 {
+    1 0 0
+    <UV> { 1 0 }
+  }
+  <Vertex> 9 {
+    0 1 1
+    <UV> { 0 0 }
+  }
+  <Vertex> 10 {
+    1 1 1
+    <UV> { 1 0 }
+  }
+  <Vertex> 11 {
+    0 1 0
+    <UV> { 0 1 }
+  }
+  <Vertex> 12 {
+    1 1 0
+    <UV> { 1 1 }
+  }
+}
+
+<Group> box {
+  <Polygon> {
+    <TRef> { one }
+    <Normal> { 0 1 0 }
+    <VertexRef> { 3 7 8 4 <Ref> { box } }
+  }
+  <Polygon> {
+    <TRef> { two }
+    <Normal> { 0 1 0 }
+    <VertexRef> { 2 6 5 1 <Ref> { box } }
+  }
+  <Polygon> {
+    <TRef> { two }
+    <Normal> { -1 0 0 }
+    <VertexRef> { 1 5 7 3 <Ref> { box } }
+  }
+  <Polygon> {
+    <TRef> { two }
+    <Normal> { 1 0 0 }
+    <VertexRef> { 4 8 6 2 <Ref> { box } }
+  }
+  <Polygon> {
+    <TRef> { five }
+    <Normal> { 0 0 1 }
+    <VertexRef> { 9 3 4 10 <Ref> { box } }
+  }
+  <Polygon> {
+    <TRef> { five }
+    <Normal> { 0 0 -1 }
+    <VertexRef> { 7 11 12 8 <Ref> { box } }
+  }
+}
+
