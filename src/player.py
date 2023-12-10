@@ -53,7 +53,7 @@ class Player(PlayerModel, Camera, Target):  # 追記
         base.taskMgr.add(self.player_update, "player_update")
 
     def update_direction(self):
-        if self.base.mouseWatcherNode.hasMouse():
+        if self.base.mouseWatcherNode.hasMouse() and self.base.inventory_node.isStashed() and self.base.menu_background_node.isStashed():
             dt = globalClock.getDt()
             x, y = self.base.mouseWatcherNode.getMouse()
             dx = x - self.mouse_pos_x

@@ -1,4 +1,4 @@
-"""08_01_main.py"""
+"""11_01_main.py"""
 from math import *
 from src import MC
 
@@ -6,7 +6,7 @@ from src import MC
 class Game(MC):
     def __init__(self):
         # MCを継承する
-        MC.__init__(self, ground_size=32)
+        MC.__init__(self, ground_size=32, mode='debug')  # 追記
 
         # 座標軸
         self.axis = self.loader.loadModel('models/zup-axis')

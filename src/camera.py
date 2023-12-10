@@ -4,7 +4,7 @@ from panda3d.core import *
 
 
 class Camera:
-    far_length = 50
+    far_length = 10
     base_camera_back = 5
     base_camera_height = 3
     base_camera_forward = 6
