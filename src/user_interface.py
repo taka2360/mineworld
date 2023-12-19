@@ -90,17 +90,8 @@ class UserInterface:
             pos=(0, 0, 0),
         )
 
-        """
-        loading_text = 'creating a new world...'
-        loading_text = '新しい世界を創造しています...'
-        self.loading_text = DrawText(
-            parent=self.splash_screen_node,
-            text=loading_text,
-            font=self.font,
-            pos=(-.2, -.5, 0),
-            scale=0.1,
-        )"""
-        self.taskMgr.doMethodLater(3, self.close_splash_screen, "close_splash_screen")
+        #load time controll
+        self.taskMgr.doMethodLater(0, self.close_splash_screen, "close_splash_screen")
 
     def select_hotbar(self, i):
         self.selected_hotbar_num = i - 1

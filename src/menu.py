@@ -1,10 +1,16 @@
 """src/menu.py"""
+import os
+import sqlite3
 from panda3d.core import *
 from .utils import *
 
 
 class Menu:
+    save_path = 'saves'  # 追記
+    db_name = 'pynecrafter'  # 追記
     def __init__(self):
+        self.db = None
+        self.cursor = None
         self.menu_node = self.aspect2d.attachNewNode('menu_node')
         self.menu_node.stash()
         self.save_node = self.aspect2d.attachNewNode('save_node')
@@ -69,7 +75,7 @@ class Menu:
             text='ゲームを終了',
             font=self.font,
             pos=(0, 0, -0.4),
-            command=exit
+            command=self.exit_game
         )
 
         # Save Screen
@@ -170,18 +176,185 @@ class Menu:
             self.menu_node.stash()
             self.load_node.unstash()
             self.load_notification_text.setText('')
+            self.add_list_items()
         else:
             self.menu_node.unstash()
             self.load_node.stash()
 
     def save_world(self):
-        pass
+        world_name = self.save_input_field.get(True)
+        if world_name:
+            self.save_notification_text['text'] = 'セーブしています...'
 
-    def load_world(self):
-        pass
+            # セーブ処理
+            self.connect_db()
+            self.create_tables()
+            self.cursor.execute('SELECT COUNT(*) FROM worlds WHERE name = ?', (world_name,))
+            has_same_world_name = self.cursor.fetchone()[0]
+
+            # ワールドを保存
+            if has_same_world_name:
+                self.cursor.execute(
+                    'UPDATE worlds SET ground_size = ?, game_mode = ? WHERE name == ?',
+                    (self.ground_size, self.mode, world_name)
+                )
+            else:
+                self.cursor.execute(
+                    'INSERT INTO worlds(name, ground_size, game_mode) values(?, ?, ?)',
+                    (world_name, self.ground_size, self.mode)
+                )
+
+            # world_id を取得
+            world_id = self.get_world_id_from_name(world_name)
+
+            # ブロックデータを初期化
+            self.cursor.execute(
+                'DELETE FROM blocks where world_id = ?',
+                (world_id,)
+            )
+
+            # ブロックデータを保存
+            inserts = []
+            for key, value in self.block.block_dictionary.items():
+                x, y, z = key.split('_')
+                block_id = value
+                inserts.append((x, y, z, block_id, world_id))
+            self.cursor.executemany(
+                'INSERT INTO blocks(x, y, z, block_id, world_id) values(?, ?, ?, ? ,?)',
+                inserts
+            )
+
+            # プレイヤーを初期化
+            self.cursor.execute(
+                'DELETE FROM characters where world_id = ?',
+                (world_id,)
+            )
+
+            # プレイヤー情報を保存
+            character_type = 'player'
+            x, y, z = self.player.position
+            direction_x, direction_y, direction_z = self.player.direction
+            self.cursor.execute(
+                'INSERT INTO characters(character_type, x, y, z, direction_x, direction_y, direction_z, world_id) '
+                'values(?, ?, ?, ? ,?, ?, ?, ?)',
+                (character_type, x, y, z, direction_x, direction_y, direction_z, world_id)
+            )
+
+            self.db.commit()
+            self.save_notification_text['text'] = 'セーブ完了！'
+        else:
+            self.save_notification_text['text'] = 'ワールド名を入力してください。'
+
+    def load_world(self, *world_name):
+        world_name = "".join(world_name)
+        # ロード処理
+        # # ブロックを全て削除
+        self.block_node.removeNode()
+
+        # ブロックを復元
+        self.block_node = self.render.attachNewNode(PandaNode('block_node'))
+        world_id = self.get_world_id_from_name(world_name)
+        self.cursor.execute('SELECT * FROM blocks WHERE world_id = ?', (world_id,))
+        recorded_blocks = self.cursor.fetchall()
+        for block in recorded_blocks:
+            _, x, y, z, block_id, _ = block
+            self.block.add_block(x, y, z, block_id)
+
+        # プレイヤーを更新
+        self.cursor.execute(
+            'SELECT x, y, z, direction_x, direction_y, direction_z FROM characters WHERE world_id = ? AND character_type = ?',
+            (world_id, 'player')
+        )
+        x, y, z, direction_x, direction_y, direction_z = self.cursor.fetchall()[0]
+        self.player.position = Point3(x, y, z)
+        self.player.direction = Vec3(direction_x, direction_y, direction_z)
             
     def open_server(self):
         pass
             
     def join_server(self):
         pass
+
+    def connect_db(self):
+        path = Menu.save_path
+        db_name = Menu.db_name
+        if not os.path.exists(path):
+            os.makedirs(path)
+        if self.db is None:
+            self.db = sqlite3.connect(f'{path}/{db_name}.sqlite3')
+            self.cursor = self.db.cursor()
+
+    def create_tables(self):
+        self.cursor.execute(
+            'CREATE TABLE IF NOT EXISTS worlds('
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'name TEXT UNIQUE, '
+            'ground_size INTEGER, '
+            'game_mode TEXT, '
+            'created_at TEXT NOT NULL DEFAULT (DATETIME(\'now\', \'localtime\')), '
+            'updated_at TEXT NOT NULL DEFAULT (DATETIME(\'now\', \'localtime\')))'
+        )
+        self.cursor.execute(
+            'CREATE TRIGGER IF NOT EXISTS trigger_worlds_updated_at AFTER UPDATE ON worlds '
+            'BEGIN'
+            '   UPDATE test SET updated_at = DATETIME(\'now\', \'localtime\') WHERE rowid == NEW.rowid;'
+            'END'
+        )
+        self.cursor.execute(
+            'CREATE TABLE IF NOT EXISTS characters(' 
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'character_type TEXT, '
+            'x INTEGER, '
+            'y INTEGER, '
+            'z INTEGER, '
+            'direction_x INTEGER, '
+            'direction_y INTEGER, '
+            'direction_z INTEGER, '
+            'world_id INTEGER)'
+        )
+        self.cursor.execute(
+            'CREATE TABLE IF NOT EXISTS blocks('
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'x INTEGER, '
+            'y INTEGER, '
+            'z INTEGER, '
+            'block_id INTEGER, '
+            'world_id INTEGER)'
+        )
+    def get_world_id_from_name(self, world_name):
+        self.cursor.execute(
+            'SELECT id from worlds where name = ?',
+            (world_name,)
+        )
+        world_id = self.cursor.fetchone()[0]
+    
+        return world_id
+    
+    def get_world_names(self):
+        self.connect_db()
+        self.create_tables()
+
+        # ワールド名のリストを取得
+        self.cursor.execute(
+            'SELECT name FROM worlds ORDER BY updated_at DESC'
+        )
+        world_names = [value[0] for value in self.cursor.fetchall()]
+
+        return world_names
+
+    def add_list_items(self):
+        self.load_list.removeAndDestroyAllItems()
+
+        world_names = self.get_world_names()
+        for name in world_names:
+            list_item = DrawMappedButton(
+                parent=None,
+                model=self.button_model,
+                text=name,
+                font=self.font,
+                pos=(0, 0, -0.75),
+                command=self.load_world,
+                extra_args=name
+            )
+            self.load_list.addItem(list_item)
+

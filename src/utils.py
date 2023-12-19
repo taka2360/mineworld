@@ -30,7 +30,7 @@ class DrawText(OnscreenText):
         self.start_time = None
 
 class DrawMappedButton(DirectButton):
-    def __init__(self, parent=None, model=None, text='', font=None, pos=(0, 0, 0), command=None):
+    def __init__(self, parent=None, model=None, text='', font=None, pos=(0, 0, 0), command=None, extra_args=[]):
         super().__init__(
             parent=parent,
             geom=(
@@ -46,6 +46,7 @@ class DrawMappedButton(DirectButton):
             text_scale=0.1,
             text_pos=(0, -0.04),
             relief=None,
+            extraArgs=extra_args
         )
         self.initialiseoptions(DrawMappedButton)  # 全ての初期化メソッドを呼び出す
 
@@ -87,20 +88,28 @@ class DrawScrolledList(DirectScrolledList):
             parent=parent,
 
             decButton_pos=(0.35, 0, 0.53),
-            decButton_geom=model.find('**/button_up'),
+            decButton_geom=(
+                model.find('**/button_up'), model.find('**/button_press'),
+                model.find('**/button_over'), model.find('**/button_disabled')
+            ),
             decButton_text="Up",
             decButton_scale=0.06,
 
             incButton_pos=(0.35, 0, -0.02),
-            incButton_geom=model.find('**/button_up'),
+            incButton_geom=(
+                model.find('**/button_up'), model.find('**/button_press'),
+                model.find('**/button_over'), model.find('**/button_disabled')
+            ),
             incButton_text="down",
             incButton_scale=0.06,
 
             frameTexture=frame_texture,
-            frameSize=(0.0, 2, -0.05, 0.59),
+            frameSize=(-0.5, 1.25, -0.05, 0.59),
             pos=pos,
             scale=scale,
             numItemsVisible=num_items_visible,
             forceHeight=item_height,
+            #itemFrame_frameSize=(-0.2, 0.2, -0.37, 0.11),
+            itemFrame_pos=(0.35, 0, 0.4),
         )
         self.initialiseoptions(DrawScrolledList)  # 全ての初期化メソッドを呼び出す
